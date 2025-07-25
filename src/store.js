@@ -1,32 +1,49 @@
-export const initialStore=()=>{
-  return{
-    message: null,
-    todos: [
-      {
-        id: 1,
-        title: "Make the bed",
-        background: null,
+
+const API = "https://playground.4geeks.com/apis/fake/contact";
+const AGENDA = "mi_agenda";
+
+const getState = ({ getStore, getActions, setStore }) => {
+  return {
+    store: {
+      contacts: []
+    },
+    actions: {
+      loadContacts: async () => {
+        try {
+          const res = await fetch(`${API}/agenda/${AGENDA}`);
+          if (!res.ok) throw new Error(`Error ${res.status}`);
+          const data = await res.json();
+          setStore({ contacts: data });
+        } catch (error) {
+          console.error("Error cargando contactos:", error);
+          setStore({ contacts: [] }); // o manejo alternativo
+        }
       },
-      {
-        id: 2,
-        title: "Do my homework",
-        background: null,
+
+      addContact: async (contact) => {
+        await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...contact, agenda_slug: AGENDA })
+        });
+        getActions().loadContacts();
+      },
+      deleteContact: async (id) => {
+        await fetch(`${API}/${id}`, { method: "DELETE" });
+        getActions().loadContacts();
+      },
+      updateContact: async (id, contact) => {
+        await fetch(`${API}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(contact)
+        });
+        getActions().loadContacts();
       }
-    ]
-  }
-}
+    }
+  };
+};
 
-export default function storeReducer(store, action = {}) {
-  switch(action.type){
-    case 'add_task':
+export default getState;
 
-      const { id,  color } = action.payload
 
-      return {
-        ...store,
-        todos: store.todos.map((todo) => (todo.id === id ? { ...todo, background: color } : todo))
-      };
-    default:
-      throw Error('Unknown action.');
-  }    
-}
